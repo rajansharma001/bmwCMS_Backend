@@ -5,6 +5,7 @@ export interface clientType {
   companyName?: string | null;
   email: string;
   phone: string;
+  mobile: string;
   address: string;
   createdAt: Date;
   updatedAt: Date;

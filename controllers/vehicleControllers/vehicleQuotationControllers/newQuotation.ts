@@ -94,6 +94,7 @@ export const newQuotation = async (req: Request, res: Response) => {
         {
           quotationNumber,
           date,
+          clientId: clientData._id,
           clientName: clientData.clientName,
           companyName: clientData.companyName || null,
           address: clientData.address,
