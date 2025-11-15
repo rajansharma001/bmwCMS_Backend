@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { TripModel } from "../../../model/tripModel";
 
-export const deleteTrip = async (req: Request, res: Response) => {
+export const viewTrip = async (req: Request, res: Response) => {
   try {
     const getTrips = await TripModel.find();
     if (!getTrips) {

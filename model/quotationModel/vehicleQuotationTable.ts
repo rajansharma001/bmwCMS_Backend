@@ -6,13 +6,14 @@ const vehicleQuotationTableSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "VehicleQuotation",
     },
-    vehicleType: { type: String, required: true },
-    brandModel: { type: String, required: true },
+    vehicleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vehicle",
+    },
+
     noOfDays: { type: Number, required: true },
     ratePerDay: { type: Number, required: true },
     total: { type: Number, required: true },
-    inclusions: { type: [String], default: [] },
-    exclusions: { type: [String], default: [] },
   },
 
   { timestamps: true }

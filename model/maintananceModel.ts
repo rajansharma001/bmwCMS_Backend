@@ -7,7 +7,7 @@ const maintananceSchema = new mongoose.Schema(
       ref: "Vehicle",
       required: true,
     },
-    maintananceType: { type: String, required: true },
+    maintananceType: { type: String },
     description: { type: String, required: true },
     date: { type: Date, required: true },
     cost: { type: Number, required: true },

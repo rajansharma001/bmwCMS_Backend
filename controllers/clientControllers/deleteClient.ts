@@ -6,12 +6,12 @@ export const deleteClient = async (req: Request, res: Response) => {
   try {
     const clientId = req.params.id;
     if (!clientId) {
-      return res.status(400).json({ message: "Client Id not found." });
+      return res.status(400).json({ error: "Client Id not found." });
     }
 
     const getExistingClient = await ClientsModel.findById(clientId);
     if (!getExistingClient) {
-      return res.status(404).json({ message: "Client does not exist." });
+      return res.status(404).json({ error: "Client does not exist." });
     }
 
     const checkClientWithQuotation = await VehicleQuotationModel.findOne({
@@ -20,14 +20,14 @@ export const deleteClient = async (req: Request, res: Response) => {
 
     if (checkClientWithQuotation) {
       return res.status(400).json({
-        message:
+        error:
           "Client associates with an Quotation. You can not delete this client.",
       });
     }
 
     await ClientsModel.findByIdAndDelete(clientId);
-    return res.status(200).json({ message: "Client deleted successfully." });
+    return res.status(200).json({ success: "Client deleted successfully." });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error!" });
+    return res.status(500).json({ error: "Internal server error!" });
   }
 };

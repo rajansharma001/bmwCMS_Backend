@@ -8,12 +8,12 @@ export const newClient = async (req: Request, res: Response) => {
       req.body as clientType;
 
     if (!clientName || !email || !mobile || !address) {
-      return res.status(400).json({ message: "All fields are required." });
+      return res.status(400).json({ error: "All fields are required." });
     }
-    const checkExistingClient = await ClientsModel.find({ email });
+    const checkExistingClient = await ClientsModel.findOne({ email });
     if (checkExistingClient) {
       return res.status(409).json({
-        message: `Client with email: ${email} already exsist. Please proceed to perform other task.`,
+        error: `Client with email: ${email} already exsist. Please proceed to perform other task.`,
       });
     }
 
@@ -27,13 +27,13 @@ export const newClient = async (req: Request, res: Response) => {
     });
 
     if (!newClient) {
-      return res.status(409).json({ message: "New client creation failed." });
+      return res.status(409).json({ error: "New client creation failed." });
     }
 
     return res
       .status(201)
-      .json({ message: "New client created successfully." });
+      .json({ success: "New client created successfully." });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error!" });
+    return res.status(500).json({ error: "Internal server error!" });
   }
 };

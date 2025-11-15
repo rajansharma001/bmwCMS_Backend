@@ -1,20 +1,28 @@
 import { Request, Response } from "express";
 import { VehicleQuotationModel } from "../../../model/quotationModel/vehicleQuotationModel";
+import { VehicleQuotationTableModel } from "../../../model/quotationModel/vehicleQuotationTable";
 
+// GET /api/quotations/get-quotation/:id
 export const viewQuotationById = async (req: Request, res: Response) => {
   try {
-    const _id = req.params.id;
-    if (!_id) {
-      return res.status(404).json({ message: "Quotation Id not found." });
-    }
-    const getQuotationById = await VehicleQuotationModel.findByIdAndDelete(_id);
-    if (!getQuotationById) {
-      return res.status(409).json({ message: "Quotation fetching error." });
-    }
-    return res
-      .status(200)
-      .json({ message: "Quotation fetched successfully.", getQuotationById });
+    const { id } = req.params;
+
+    const quotation = await VehicleQuotationModel.findById(id).lean();
+    if (!quotation)
+      return res.status(404).json({ error: "Quotation not found" });
+
+    // fetch related table rows
+    const quotationTables = await VehicleQuotationTableModel.find({
+      quotationId: id,
+    }).lean();
+
+    return res.status(200).json({
+      success: true,
+      getQuotationById: quotation,
+      getQuotationTableById: quotationTables,
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error!" });
+    console.error("Error fetching quotation by ID:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

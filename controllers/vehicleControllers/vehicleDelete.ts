@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { Vehicle } from "../../model/vehicleModel";
+import { VehicleQuotationModel } from "../../model/quotationModel/vehicleQuotationModel";
+import { VehicleQuotationTableModel } from "../../model/quotationModel/vehicleQuotationTable";
 
 export const vehicleDelete = async (req: Request, res: Response) => {
   try {
@@ -8,6 +10,16 @@ export const vehicleDelete = async (req: Request, res: Response) => {
     if (!_id) {
       return res.status(400).json({ error: "Vehicle number is required." });
     }
+
+    const checkAttachedTable = await VehicleQuotationTableModel.findOne({
+      vehicleId: _id,
+    });
+    if (checkAttachedTable) {
+      return res.status(400).json({
+        error: `Vehicle with Id ${_id} is attached with an quotation. You can not delete this now.`,
+      });
+    }
+
     const deletedVehicle = await Vehicle.findOneAndDelete({ _id });
     if (!deletedVehicle) {
       return res

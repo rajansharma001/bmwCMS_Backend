@@ -4,13 +4,18 @@ import jwt from "jsonwebtoken";
 import { User } from "../../model/userModel";
 
 export const LoginController = async (req: Request, res: Response) => {
+  console.log("api hit");
   try {
     const { email, password } = req.body;
     console.log("Login attempt for email:", email, req.body);
 
+    if (!email) {
+      return res.status(400).json({ error: ` All fields are required.` });
+    }
+
     const getUser = await User.findOne({ email });
     if (!getUser) {
-      return res.status(403).json({ error: `${email} is not found.` });
+      return res.status(403).json({ error: ` ${email} is not found.` });
     }
     console.log("User found:", getUser);
 

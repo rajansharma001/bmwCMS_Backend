@@ -1,119 +1,112 @@
 import { Request, Response } from "express";
-import { VehicleQuotationModel } from "../../../model/quotationModel/vehicleQuotationModel";
+import mongoose from "mongoose";
 import { ClientsModel } from "../../../model/quotationModel/clientsModel";
+import { VehicleQuotationModel } from "../../../model/quotationModel/vehicleQuotationModel";
 import { VehicleQuotationTableModel } from "../../../model/quotationModel/vehicleQuotationTable";
 import { VehicleQuotationType } from "../../../types/vehicleQuotationType";
+import { clientType } from "../../../types/clientTypes";
 import { vehicleQuotationTableType } from "../../../types/vehicleQuotationTableTypes";
-import mongoose from "mongoose";
 
-export const editQuotation = async (req: Request, res: Response) => {
+export const updateQuotation = async (req: Request, res: Response) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const {
-      quotationNumber,
+      clientId,
       date,
       totalAmount,
       status,
       termsAndConditions,
-      createdBy,
-      clientId,
-      vehicleType,
-      brandModel,
-      noOfDays,
-      ratePerDay,
-      total,
-      inclusions = [],
-      exclusions = [],
+      tableRows,
     } = req.body;
-
     const _id = req.params.id;
+
+    // Validate required fields
     if (!_id) {
-      return res.status(400).json({ message: "Quotation ID is required" });
+      return res.status(400).json({ error: "Quotation ID is required." });
     }
 
-    const checkQuotation = await VehicleQuotationModel.findById(_id).session(
-      session
-    );
-    if (!checkQuotation) {
-      return res.status(404).json({ message: "Quotation not found" });
+    // Find existing quotation
+    const existingQuotation = await VehicleQuotationModel.findById(_id)
+      .session(session)
+      .lean<VehicleQuotationType>();
+
+    if (!existingQuotation) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: "Quotation not found." });
     }
 
-    if (checkQuotation.status !== "accepted" || "sent") {
-      return res
-        .status(409)
-        .json({ message: "You can not delete a processed quotation." });
+    // Check client existence
+    const clientData = await ClientsModel.findById(clientId)
+      .session(session)
+      .lean<clientType>();
+
+    if (!clientData) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: "Client not found." });
     }
 
-    const getClient = await ClientsModel.findOne({
-      _id: clientId,
-    }).session(session);
-
-    if (!getClient) {
-      return res.status(404).json({ message: "Client not found" });
-    }
-
+    // Update main quotation
     const updatedQuotation = await VehicleQuotationModel.findByIdAndUpdate(
       _id,
       {
-        quotationNumber: quotationNumber || checkQuotation.quotationNumber,
-        date: date || checkQuotation.date,
-        totalAmount: totalAmount || checkQuotation.totalAmount,
-        status: status || checkQuotation.status,
+        clientId: clientData._id,
+        date: date ?? existingQuotation.date,
+        totalAmount: totalAmount ?? existingQuotation.totalAmount,
+        status: status ?? existingQuotation.status,
         termsAndConditions:
-          termsAndConditions || checkQuotation.termsAndConditions,
-        createdBy: createdBy || checkQuotation.createdBy,
-        clientName: getClient.clientName,
-        companyName: getClient.companyName,
-        address: getClient.address,
-        contactNumber: getClient.phone,
-        email: getClient.email,
+          termsAndConditions ?? existingQuotation.termsAndConditions,
       },
-
       { new: true, session }
     );
 
-    const getQuotationTable = await VehicleQuotationTableModel.findOne({
-      quotationId: _id,
-    }).session(session);
-    if (!getQuotationTable) {
-      return res.status(404).json({ message: "Quotation table not found" });
+    if (!updatedQuotation) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: "Quotation update failed." });
     }
 
-    const updatedQuotationTable =
-      await VehicleQuotationTableModel.findOneAndUpdate(
-        {
-          quotationId: _id,
-        },
-        {
-          vehicleType: vehicleType ?? getQuotationTable.vehicleType,
-          brandModel: brandModel ?? getQuotationTable.brandModel,
-          noOfDays: noOfDays ?? getQuotationTable.noOfDays,
-          ratePerDay: ratePerDay ?? getQuotationTable.ratePerDay,
-          total: total ?? getQuotationTable.total,
-          inclusions: inclusions ?? getQuotationTable.inclusions,
-          exclusions: exclusions ?? getQuotationTable.exclusions,
-        },
-        { new: true, session }
+    // Update quotation table(s)
+    if (Array.isArray(tableRows) && tableRows.length > 0) {
+      // Remove existing quotation tables
+      await VehicleQuotationTableModel.deleteMany({ quotationId: _id }).session(
+        session
       );
 
+      // Insert updated table rows
+      const updatedTableEntries = tableRows.map((item: any) => ({
+        quotationId: _id,
+        vehicleId: item.vehicleId,
+        noOfDays: item.noOfDays,
+        ratePerDay: item.ratePerDay,
+        total: item.total,
+      }));
+
+      await VehicleQuotationTableModel.insertMany(updatedTableEntries, {
+        session,
+      });
+    }
+
     const updatedQuotationObj =
-      updatedQuotation?.toObject<VehicleQuotationType>();
-    const updatedQuotationTableObj =
-      updatedQuotationTable?.toObject<vehicleQuotationTableType>();
+      updatedQuotation.toObject<VehicleQuotationType>();
+    const updatedQuotationTables = await VehicleQuotationTableModel.find({
+      quotationId: _id,
+    })
+      .session(session)
+      .lean<vehicleQuotationTableType[]>();
 
     await session.commitTransaction();
 
     return res.status(200).json({
-      message: "Quotation updated successfully",
+      success: true,
+      message: "Quotation updated successfully.",
       updatedQuotation: updatedQuotationObj,
-      updatedQuotationTable: updatedQuotationTableObj,
+      updatedQuotationTable: updatedQuotationTables,
     });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error updating quotation:", error);
     await session.abortTransaction();
-
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   } finally {
     session.endSession();
   }
