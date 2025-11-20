@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { TripModel, ITripDocument } from "../../../model/tripModel";
+import { TicketBookingModel } from "../../../model/ticketModel/ticketBookingModel";
 
 interface AddPaymentRequest extends Request {
   body: {
-    tripId: string;
+    ticketId: string;
     amount: number;
     paymentMethod: string;
     date: string;
@@ -11,7 +11,7 @@ interface AddPaymentRequest extends Request {
   };
 }
 
-export const addPaymentToTrip = async (
+export const addPaymentToTicket = async (
   req: AddPaymentRequest,
   res: Response
 ) => {
@@ -19,13 +19,13 @@ export const addPaymentToTrip = async (
   console.log("Request Body:", req.body);
 
   try {
-    const { tripId, amount, paymentMethod, date, description } = req.body;
+    const { ticketId, amount, paymentMethod, date, description } = req.body;
 
-    if (!tripId) {
-      console.error("Validation Error: Missing Trip ID.");
+    if (!ticketId) {
+      console.error("Validation Error: Missing Ticket ID.");
       return res
         .status(400)
-        .json({ error: "Trip ID is required from the request body." });
+        .json({ error: "Ticket ID is required from the request body." });
     }
 
     const paymentAmount = Number(amount);
@@ -41,39 +41,39 @@ export const addPaymentToTrip = async (
       return res.status(400).json({ error: "Payment method is required." });
     }
 
-    console.log(`Payload valid. Searching for Trip ID: ${tripId}`);
+    console.log(`Payload valid. Searching for Ticket ID: ${ticketId}`);
 
-    const trip: ITripDocument | null = await TripModel.findById(tripId);
-    if (!trip) {
-      console.error(`Database Error: Trip ID ${tripId} not found.`);
-      return res.status(404).json({ error: "Trip not found." });
+    const ticket = await TicketBookingModel.findById(ticketId);
+    if (!ticket) {
+      console.error(`Database Error: Trip ID ${ticketId} not found.`);
+      return res.status(404).json({ error: "Ticket not found." });
     }
 
     console.log(
-      `Trip Found. Total Paid: ${trip.totalPaidAmount}, Current Balance Due: ${trip.balanceDue}`
+      `Ticket Found. Total Paid: ${ticket.totalPaidAmount}, Current Balance Due: ${ticket.balanceDue}`
     );
 
-    if (trip.balanceDue <= 0) {
+    if (ticket.balanceDue <= 0) {
       console.error(
-        `Strict Payment Blocked: Balance is already Rs. ${trip.balanceDue.toFixed(
+        `Strict Payment Blocked: Balance is already Rs. ${ticket.balanceDue.toFixed(
           2
         )}. Cannot accept new payment.`
       );
       return res.status(400).json({
-        error: `This trip is already fully paid or overpaid (Balance: Rs. ${trip.balanceDue.toFixed(
+        error: `This Ticket is already fully paid or overpaid (Balance: Rs. ${ticket.balanceDue.toFixed(
           2
         )}). Cannot record new payments.`,
       });
     }
 
-    if (paymentAmount > trip.balanceDue) {
+    if (paymentAmount > ticket.balanceDue) {
       console.error(
-        `Strict Payment Blocked: Payment Rs. ${paymentAmount} exceeds the remaining balance Rs. ${trip.balanceDue.toFixed(
+        `Strict Payment Blocked: Payment Rs. ${paymentAmount} exceeds the remaining balance Rs. ${ticket.balanceDue.toFixed(
           2
         )}.`
       );
       return res.status(400).json({
-        error: `Payment amount Rs. ${paymentAmount} exceeds the remaining balance of Rs. ${trip.balanceDue.toFixed(
+        error: `Payment amount Rs. ${paymentAmount} exceeds the remaining balance of Rs. ${ticket.balanceDue.toFixed(
           2
         )}. Please adjust the amount.`,
       });
@@ -88,19 +88,19 @@ export const addPaymentToTrip = async (
       description: description || "",
     };
 
-    trip.payments.push(newPaymentEntry as any);
+    ticket.payments.push(newPaymentEntry as any);
     console.log("New Payment Entry added to array:", newPaymentEntry);
 
-    const updatedTrip = await trip.save();
-    console.log("Trip saved successfully.");
+    const updatedTicket = await ticket.save();
+    console.log("Ticket saved successfully.");
 
     console.log("--- Request Complete (Success) ---");
     return res.status(200).json({
       success: "Payment added successfully",
-      trip: updatedTrip,
+      ticket: updatedTicket,
     });
   } catch (error: any) {
-    console.error("FATAL ERROR during addPaymentToTrip:", error);
+    console.error("FATAL ERROR during addPaymentToTicket:", error);
 
     if (error.name === "ValidationError") {
       return res

@@ -18,7 +18,7 @@ const FundsLedgerSchema = new mongoose.Schema(
     },
     airline: {
       type: String,
-      enum: ["buddha", "shree", "yeti", "nepalair"],
+      enum: ["buddha_air", "shree_air", "yeti_air", "nepal_air"],
       required: true,
     },
     balance: {

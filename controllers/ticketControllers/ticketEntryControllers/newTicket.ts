@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { TicketBooking } from "../../../types/ticketBookingTypes";
-import { clientType } from "../../../types/clientTypes";
 import { ClientsModel } from "../../../model/quotationModel/clientsModel";
 import { TicketBookingModel } from "../../../model/ticketModel/ticketBookingModel";
+import { ITicketBookingDocument } from "../../../model/ticketModel/ticketBookingModel"; // Assuming your model export includes this interface
+import { FundsLedger } from "../../../model/ticketModel/fundsLedgerModel";
+import { FundsLedgerTypes } from "../../../types/fundsLedgerTypes";
+
+// Note: You might need to update your types file to include the IPayment structure if not already done.
 
 export const newTicket = async (req: Request, res: Response) => {
   const session = await mongoose.startSession();
@@ -12,19 +15,10 @@ export const newTicket = async (req: Request, res: Response) => {
   try {
     const {
       clientId,
-      clientName,
-      companyName,
-      email,
-      phone,
-      mobile,
-      address,
       bookingDate,
-      status,
-      tripType,
       departureFrom,
       destinationTo,
       departureDate,
-      returnDate,
       airlineName,
       flightNumber,
       seatClass,
@@ -32,120 +26,126 @@ export const newTicket = async (req: Request, res: Response) => {
       baseFare,
       taxesAndFees,
       totalAmount,
-      currency,
-      paymentMethod,
-      paymentStatus,
-      transactionId,
+      initialPaymentAmount,
+      initialPaymentMethod,
+      initialTransactionId,
       bookedBy,
       issuedTicketNumber,
       remarks,
     } = req.body;
 
-    if (!email) {
+    if (
+      !clientId ||
+      !bookingDate ||
+      !departureFrom ||
+      !destinationTo ||
+      !departureDate ||
+      !totalAmount ||
+      !bookedBy ||
+      !issuedTicketNumber
+    ) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({
-        message: "Please provide Email to perform this task.",
+      return res
+        .status(400)
+        .json({ error: "All required booking details must be provided." });
+    }
+
+    // --- 2. Initial Payment Validation (Similar to newTrip) ---
+    const totalFare = Number(totalAmount);
+    const initialPaidAmount = Number(initialPaymentAmount) || 0;
+
+    if (initialPaidAmount > totalFare) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        error:
+          "Initial paid amount cannot be greater than the total ticket amount.",
       });
     }
 
     if (
-      !bookingDate ||
-      !status ||
-      !tripType ||
-      !departureFrom ||
-      !destinationTo ||
-      !departureDate ||
-      (tripType === "round-trip" && !returnDate) ||
-      !airlineName ||
-      !flightNumber ||
-      !seatClass ||
-      !noOfPassengers ||
-      !baseFare ||
-      !taxesAndFees ||
-      !totalAmount ||
-      !currency ||
-      !paymentMethod ||
-      !paymentStatus ||
-      !transactionId ||
-      !bookedBy ||
-      !issuedTicketNumber
+      initialPaidAmount > 0 &&
+      (!initialPaymentMethod || initialPaymentMethod === "none")
     ) {
-      session.abortTransaction();
+      await session.abortTransaction();
       session.endSession();
-      return res
-        .status(400)
-        .json({ message: "All required fields must be provided." });
+      return res.status(400).json({
+        error:
+          "A valid payment method is required for an initial payment amount greater than zero.",
+      });
     }
 
-    let clientData: clientType;
+    // --- 3. Prepare Payments Array ---
+    const initialPayments = [];
 
-    const checkClientExists = await ClientsModel.findOne({
-      email: email,
-    })
-      .lean<clientType>()
+    if (initialPaidAmount > 0) {
+      initialPayments.push({
+        amount: initialPaidAmount,
+        paymentMethod: initialPaymentMethod,
+        transactionId: initialTransactionId,
+        date: new Date(),
+      });
+    }
+
+    // --- 4. Check Client Exists (Ensure session is passed) ---
+    const checkClientExists = await ClientsModel.findById(clientId)
+      .lean()
       .session(session);
 
-    if (checkClientExists) {
-      clientData = checkClientExists;
-
-      if (clientId && checkClientExists._id.toString() !== clientId) {
-        console.warn(
-          `Provided clientId ${clientId} does not match existing client ID ${checkClientExists._id} for email ${email}. Using existing client.`
-        );
-      }
-    } else {
-      if (!clientName || !phone || !address) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(400).json({
-          message:
-            "Missing required fields for new client registration (Name, Phone, Address).",
-        });
-      }
-      const newClient = await ClientsModel.create(
-        [
-          {
-            clientName,
-            companyName,
-            email,
-            phone,
-            mobile,
-            address,
-          },
-        ],
-        { session }
-      );
-
-      if (!newClient || newClient.length === 0) {
-        return res.status(500).json({
-          message: "Failed to create new client during ticket booking.",
-        });
-      }
-      clientData = newClient[0].toObject<clientType>();
+    if (!checkClientExists) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: "Client not found." });
     }
+
+    // --- check balance available or not in funds ledger
+
+    const checkLedger = await FundsLedger.findOne({
+      airline: airlineName,
+    })
+      .lean<FundsLedgerTypes>()
+      .session(session);
+
+    if (!checkLedger) {
+      return res.status(400).json({
+        error: "Airline not found in Ledger.",
+      });
+    }
+
+    if (checkLedger.balance < totalAmount) {
+      return res.status(400).json({
+        error:
+          "Ticket amount is more than available balance. Please load balance and try again.",
+      });
+    }
+    const updateBalanceToLedger = await FundsLedger.findByIdAndUpdate(
+      checkLedger._id,
+      {
+        $inc: { balance: -totalAmount },
+      },
+      { session }
+    );
+
+    // --- 5. Create Ticket Booking ---
     const [newTicketBooking] = await TicketBookingModel.create(
       [
         {
-          clientId: clientData._id,
+          clientId: checkClientExists._id,
           bookingDate,
-          status,
-          tripType,
           departureFrom,
           destinationTo,
           departureDate,
-          returnDate,
           airlineName,
           flightNumber,
           seatClass,
           noOfPassengers,
           baseFare,
           taxesAndFees,
-          totalAmount,
-          currency,
-          paymentMethod,
-          paymentStatus,
-          transactionId,
+          totalAmount: totalFare,
+
+          payments: initialPayments,
+
           bookedBy,
           issuedTicketNumber,
           remarks,
@@ -154,16 +154,21 @@ export const newTicket = async (req: Request, res: Response) => {
       { session }
     );
 
-    const newTicketBookingObj = newTicketBooking.toObject<TicketBooking>();
+    const newTicketBookingObj =
+      newTicketBooking.toObject() as ITicketBookingDocument;
 
     await session.commitTransaction();
+
     return res.status(201).json({
-      message: "New booking created successfully.",
-      newTicketBookingObj,
+      success: "New booking created successfully.",
+      newTicketBooking: newTicketBookingObj,
     });
   } catch (error) {
     await session.abortTransaction();
-    return res.status(500).json({ message: "Internal server error!" });
+    console.error("Ticket Booking Error:", error);
+    return res
+      .status(500)
+      .json({ error: "Internal server error during ticket booking!" });
   } finally {
     session.endSession();
   }

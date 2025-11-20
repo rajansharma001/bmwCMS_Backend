@@ -1,12 +1,9 @@
 export type TicketBookingFundsTypes = {
   _id?: string;
-  fundsFor: "buddha_air" | "shree_air" | "yeti_air" | "nepal_air";
+  fundsFor: string;
   newFund: number;
-  totalFund: number;
-  availableFund: number;
-  status: "completed" | "reversed";
+  status: string;
   reversedFundId?: string;
-  usedFund: number;
   createdAt?: Date;
   updatedAt?: Date;
 };

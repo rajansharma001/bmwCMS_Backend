@@ -4,36 +4,23 @@ const TicketBookingFundSchema = new mongoose.Schema(
   {
     fundsFor: {
       type: String,
-      enum: ["buddha", "shree", "yeti", "nepalair"],
+      enum: ["buddha_air", "shree_air", "yeti_air", "nepal_air"],
       required: true,
     },
     newFund: {
       type: Number,
       required: true,
-      default: 0,
-    },
-    totalFund: {
-      type: Number,
-      required: true,
-      default: 0,
     },
     status: {
       type: String,
-      enum: ["completed", "reversed"],
-      default: "reversed",
+      enum: ["pending", "completed", "reversal-in", "reversed-out"],
+      default: "completed",
     },
     reveredFundId: {
       type: String,
     },
-    availableFund: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    usedFund: {
-      type: Number,
-      required: true,
-      default: 0,
+    description: {
+      type: String,
     },
   },
   { timestamps: true }

@@ -11,22 +11,19 @@ export const newFundEntry = async (req: Request, res: Response) => {
   try {
     const { fundsFor, newFund } = req.body as TicketBookingFundsTypes;
 
-    if (!fundsFor || !newFund) {
+    if (!fundsFor || typeof newFund !== "number") {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: "All fields are required." });
+      return res.status(400).json({ error: "All fields are required." });
     }
-    const addNewFund = await TicketBookingFund.create(
-      {
-        fundsFor,
-        newFund,
-        status: "completed",
-      },
 
+    const [addNewFund] = await TicketBookingFund.create(
+      [{ fundsFor, newFund, status: "completed" }],
       { session }
     );
+
     if (!addNewFund) {
-      return res.status(400).json({ message: "New fund creation failed." });
+      return res.status(400).json({ error: "New fund creation failed." });
     }
 
     const addFundsToLedger = await FundsLedger.findOneAndUpdate(
@@ -42,13 +39,13 @@ export const newFundEntry = async (req: Request, res: Response) => {
 
     await session.commitTransaction();
     return res.status(201).json({
-      message: "New fund added successfully.",
+      success: "New fund added successfully.",
       addNewFund,
       addFundsToLedger: addFundsToLedger.toObject<FundsLedgerTypes>(),
     });
   } catch (error) {
     await session.abortTransaction();
-    return res.status(500).json({ message: "Internal server error!" });
+    return res.status(500).json({ error: "Internal server error!" });
   } finally {
     session.endSession();
   }

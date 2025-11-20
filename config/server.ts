@@ -10,6 +10,9 @@ import { verifyToken } from "../middleware/verifyToken";
 import { clientRoutes } from "../routes/clientRoutes";
 import { quotationRoutes } from "../routes/quotationRoutes";
 import { tripRoutes } from "../routes/tripsRoutes";
+import { ticketFundsRoute } from "../routes/ticketFundsRoutes";
+import { ledgerRoutes } from "../routes/ledgerRoutes";
+import { ticketRoutes } from "../routes/ticketRoutes";
 
 const app = express();
 dotenv.config();
@@ -48,7 +51,20 @@ app.use("/api/clients", verifyToken, clientRoutes);
 // trip routes
 app.use("/api/trips", verifyToken, tripRoutes);
 
+// ticket fund
+app.use("/api/funds", verifyToken, ticketFundsRoute);
+
+// ticket ledger
+app.use("/api/ledgers", verifyToken, ledgerRoutes);
+
+// ticket routes
+app.use("/api/tickets", verifyToken, ticketRoutes);
 // -----------------------Route ends here----------------------- //
+
+app.use((req, res) => {
+  console.log("Unmatched request:", req.method, req.path);
+  res.status(404).json({ error: "Route not found by Express" });
+});
 
 // Start the server
 app.listen(PORT, () => {
