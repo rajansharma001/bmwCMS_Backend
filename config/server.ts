@@ -13,11 +13,21 @@ import { tripRoutes } from "../routes/tripsRoutes";
 import { ticketFundsRoute } from "../routes/ticketFundsRoutes";
 import { ledgerRoutes } from "../routes/ledgerRoutes";
 import { ticketRoutes } from "../routes/ticketRoutes";
+import { brandRoutes } from "../routes/webRoutes/brandRoutes";
+import { sliderRoutes } from "../routes/webRoutes/sliderRoutes";
+import { counterRoutes } from "../routes/webRoutes/counterRoutes";
+import { aboutRouter } from "../routes/webRoutes/aboutRoutes";
+import { servicesRoutes } from "../routes/webRoutes/servicesRoutes";
+import { whyChooseUsRoutes } from "../routes/webRoutes/whyChooseUsRoutes";
+import { galleryRoutes } from "../routes/webRoutes/galleryRoutes";
+import { faqRoutes } from "../routes/webRoutes/faqRoutes";
+import { testimonialRoutes } from "../routes/webRoutes/testimonialsRoutes";
+import { packageRoutes } from "../routes/webRoutes/packagesRoutes";
 
 const app = express();
 dotenv.config();
 dbConnect();
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT || 7000;
 
 // Middleware
 app.use(express.json());
@@ -60,6 +70,36 @@ app.use("/api/ledgers", verifyToken, ledgerRoutes);
 // ticket routes
 app.use("/api/tickets", verifyToken, ticketRoutes);
 // -----------------------Route ends here----------------------- //
+
+// brand routes
+app.use("/api/brand", brandRoutes);
+
+// slider routes]
+app.use("/api/sliders", sliderRoutes);
+
+// counterRoutes
+app.use("/api/counters", counterRoutes);
+
+// aboutRoutes
+app.use("/api/abouts", aboutRouter);
+
+// servicesRoutes
+app.use("/api/services", servicesRoutes);
+
+//  why choose us routes
+app.use("/api/whychooseus", whyChooseUsRoutes);
+
+// galleryRoutes
+app.use("/api/galleries", galleryRoutes);
+
+// faqRoutes
+app.use("/api/faqs", faqRoutes);
+
+// testimonialsRoutes
+app.use("/api/testimonials", testimonialRoutes);
+
+// packagesRoutes
+app.use("/api/packages", packageRoutes);
 
 app.use((req, res) => {
   console.log("Unmatched request:", req.method, req.path);
