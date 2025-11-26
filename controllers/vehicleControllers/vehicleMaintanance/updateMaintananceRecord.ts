@@ -5,14 +5,14 @@ export const updateMaintananceRecord = async (req: Request, res: Response) => {
   try {
     const _id = req.params.id;
     if (!_id) {
-      return res.status(404).json({ message: "Maintenance Id not found" });
+      return res.status(404).json({ error: "Maintenance Id not found" });
     }
     console.log("main-update runnging: 1");
     const { vehicleId, maintananceType, description, cost, date } = req.body;
     console.log(req.body);
     const checkRecord = await MaintananceModel.findById(_id);
     if (!checkRecord) {
-      return res.status(404).json({ message: "Maintenance record not found" });
+      return res.status(404).json({ error: "Maintenance record not found" });
     }
     console.log("main-update runnging: 2");
 
@@ -36,16 +36,16 @@ export const updateMaintananceRecord = async (req: Request, res: Response) => {
 
     if (!updatedRecord) {
       return res.status(404).json({
-        message: "Maintenance record updation failed. Please try again.",
+        error: "Maintenance record updation failed. Please try again.",
       });
     }
     console.log("main-update runnging: 5");
 
     return res.status(200).json({
-      message: "Maintenance record updated successfully",
+      success: "Maintenance record updated successfully",
       updatedRecord,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

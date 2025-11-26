@@ -9,20 +9,20 @@ export const deleteMainananceRecord = async (req: Request, res: Response) => {
     if (!_id) {
       return res
         .status(400)
-        .json({ message: "Maintenance record ID is required" });
+        .json({ error: "Maintenance record ID is required" });
     }
     const deletedRecord = await MaintananceModel.findByIdAndDelete(_id);
     console.log(`running 2`);
 
     if (!deletedRecord) {
-      return res.status(404).json({ message: "Maintenance record not found" });
+      return res.status(404).json({ error: "Maintenance record not found" });
     }
     console.log(`running 3`);
 
     return res
       .status(200)
-      .json({ message: "Maintenance record deleted successfully" });
+      .json({ success: "Maintenance record deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

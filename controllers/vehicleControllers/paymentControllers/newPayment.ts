@@ -23,7 +23,7 @@ export const newPayment = async (req: Request, res: Response) => {
       !paymentMethod ||
       !payment_person
     ) {
-      return res.status(400).json({ message: "All fields are required!" });
+      return res.status(400).json({ error: "All fields are required!" });
     }
 
     const getQuotationDetails = await VehicleQuotationModel.findById(
@@ -32,7 +32,7 @@ export const newPayment = async (req: Request, res: Response) => {
 
     if (!getQuotationDetails) {
       await session.abortTransaction();
-      return res.status(404).json({ message: "Quotation not found!" });
+      return res.status(404).json({ error: "Quotation not found!" });
     }
 
     const existingPayments = await PaymentsModel.find({
@@ -51,7 +51,7 @@ export const newPayment = async (req: Request, res: Response) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({
-        message: `Payment of ${amountPaid} exceeds the pending amount of ${currentPendingAmount}.`,
+        error: `Payment of ${amountPaid} exceeds the pending amount of ${currentPendingAmount}.`,
       });
     }
     const newPendingAmount = currentPendingAmount - amountPaid;
@@ -61,7 +61,7 @@ export const newPayment = async (req: Request, res: Response) => {
     if (totalAlreadyPaid >= getQuotationDetails.totalAmount) {
       await session.abortTransaction();
       return res.status(400).json({
-        message: "This quotation is already fully paid.",
+        error: "This quotation is already fully paid.",
       });
     }
 
@@ -96,19 +96,17 @@ export const newPayment = async (req: Request, res: Response) => {
       );
     } else {
       await session.abortTransaction();
-      return res
-        .status(409)
-        .json({ message: "This quotation is not accepted." });
+      return res.status(409).json({ error: "This quotation is not accepted." });
     }
 
     await session.commitTransaction();
 
     return res.status(201).json({
-      message: "New payment added successfully.",
+      success: "New payment added successfully.",
     });
   } catch (error) {
     await session.abortTransaction();
-    return res.status(500).json({ message: "Internal server error!" });
+    return res.status(500).json({ error: "Internal server error!" });
   } finally {
     session.endSession();
   }

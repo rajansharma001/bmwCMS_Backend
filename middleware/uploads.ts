@@ -21,9 +21,20 @@ const storage = new CloudinaryStorage({
     return {
       folder: "bmw_uploads",
       resource_type: "auto",
-      allowed_formats: ["jpg", "png", "jpeg", "mp4"],
+      allowed_formats: ["jpg", "png", "jpeg", "webp", "avif"],
       ...(isImage && {
-        transformation: [{ width: 500, height: 500, crop: "limit" }],
+        transformation: [
+          { width: 1920, crop: "scale" },
+          { quality: "auto" },
+          { fetch_format: "auto" },
+          { effect: "enhance" },
+          {
+            aspect_ratio: "1:1",
+            gravity: "center",
+            background: "gen_fill",
+            crop: "pad",
+          },
+        ],
       }),
     };
   },

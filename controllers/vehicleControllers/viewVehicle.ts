@@ -10,7 +10,7 @@ export const viewVehicle = async (req: Request, res: Response) => {
 
     return res
       .status(200)
-      .json({ message: "View vehicle endpoint working.", getVehicle });
+      .json({ error: "View vehicle endpoint working.", getVehicle });
   } catch (error) {
     console.log("Error in viewing vehicle:", error);
     return res.status(500).json({ error: "Bad Request for viewing vehicle." });
@@ -32,7 +32,7 @@ export const viewVehicleById = async (req: Request, res: Response) => {
     console.log("2nd running");
     return res
       .status(200)
-      .json({ message: "View vehicle endpoint working.", getVehicleById });
+      .json({ success: "View vehicle endpoint working.", getVehicleById });
   } catch (error) {
     console.log("Error in viewing vehicle:", error);
     return res.status(500).json({ error: "Bad Request for viewing vehicle." });

@@ -6,7 +6,7 @@ export const newMaintananceRecord = async (req: Request, res: Response) => {
     console.log("running 1");
     const { vehicleId, description, date, cost } = req.body;
     if (!vehicleId || !description || !date || !cost) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
     console.log("running 2");
     const file = req.file;
@@ -23,14 +23,14 @@ export const newMaintananceRecord = async (req: Request, res: Response) => {
     });
     console.log("running 4");
     if (!newRecord) {
-      return res.status(500).json({ message: "Failed to create new record" });
+      return res.status(500).json({ error: "Failed to create new record" });
     }
     console.log("running 5");
     return res.status(201).json({
-      message: "New maintenance record created successfully",
+      success: "New maintenance record created successfully",
       newRecord,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

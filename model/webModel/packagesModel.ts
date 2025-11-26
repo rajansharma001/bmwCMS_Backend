@@ -1,3 +1,4 @@
+// models/packages.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface PackageItem {
@@ -11,17 +12,12 @@ export interface PackageItem {
   isFeatured: boolean;
   callToAction: string;
   imageUrl?: string;
-
-  // --- NEW SPECIAL OFFER FIELDS ---
   specialOfferTitle?: string;
   specialOfferDetails?: string;
   hasSpecialOffer: boolean;
-  // ----------------------------------
-
   _id?: string;
 }
 
-// --- Packages Section Document Interface (No Change) ---
 export interface PackagesSectionDocument extends Document {
   heading: string;
   title: string;
@@ -29,7 +25,6 @@ export interface PackagesSectionDocument extends Document {
   packages: PackageItem[];
 }
 
-// 1. Define the Schema for a single Package Item (subdocument)
 const PackageItemSchema: Schema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -47,8 +42,6 @@ const PackageItemSchema: Schema = new Schema(
     isFeatured: { type: Boolean, required: true, default: false },
     callToAction: { type: String, required: true, default: "Get Started" },
     imageUrl: { type: String, required: false, trim: true },
-
-    // --- NEW SPECIAL OFFER FIELDS ---
     specialOfferTitle: { type: String, required: false, trim: true },
     specialOfferDetails: { type: String, required: false, trim: true },
     hasSpecialOffer: { type: Boolean, required: true, default: false },
@@ -56,7 +49,6 @@ const PackageItemSchema: Schema = new Schema(
   { _id: true }
 );
 
-// 2. Define the main Packages Section Schema (No Change)
 const PackagesSectionSchema: Schema = new Schema(
   {
     heading: { type: String, required: true, trim: true },
@@ -73,9 +65,8 @@ const PackagesSectionSchema: Schema = new Schema(
   }
 );
 
-// 3. Create and Export the Mongoose Model (No Change to export)
 export const PackagesSectionModel = mongoose.model<PackagesSectionDocument>(
-  "PackagesSectionModel",
+  "PackagesSection",
   PackagesSectionSchema,
   "packagessections"
 );

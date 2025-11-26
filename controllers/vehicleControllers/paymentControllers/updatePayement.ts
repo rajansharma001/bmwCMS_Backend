@@ -19,7 +19,7 @@ export const updatePayment = async (req: Request, res: Response) => {
 
     if (!paymentId) {
       session.endSession();
-      return res.status(400).json({ message: "Payment ID not found." });
+      return res.status(400).json({ error: "Payment ID not found." });
     }
     if (
       !quotationId ||
@@ -30,14 +30,12 @@ export const updatePayment = async (req: Request, res: Response) => {
       !payment_person
     ) {
       session.endSession();
-      return res
-        .status(400)
-        .json({ message: "All required fields are needed." });
+      return res.status(400).json({ error: "All required fields are needed." });
     }
     const parsedAmountPaid = parseFloat(amountPaid);
     if (isNaN(parsedAmountPaid) || parsedAmountPaid < 0) {
       session.endSession();
-      return res.status(400).json({ message: "Invalid payment amount." });
+      return res.status(400).json({ error: "Invalid payment amount." });
     }
 
     // --- 2. Fetch Payment and Quotation (in session) ---
@@ -47,7 +45,7 @@ export const updatePayment = async (req: Request, res: Response) => {
     if (!getPrevPayment) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Payment record not found." });
+      return res.status(404).json({ error: "Payment record not found." });
     }
 
     // Store old amount for recalculation
@@ -59,7 +57,7 @@ export const updatePayment = async (req: Request, res: Response) => {
     if (!getQuotationDetails) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Quotation not found!" });
+      return res.status(404).json({ error: "Quotation not found!" });
     }
 
     // --- 3. Recalculate Totals (Isolating the payment being updated) ---
@@ -87,7 +85,7 @@ export const updatePayment = async (req: Request, res: Response) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({
-        message: `The total paid amount of ${totalPaid_AfterUpdate.toFixed(
+        error: `The total paid amount of ${totalPaid_AfterUpdate.toFixed(
           2
         )} exceeds the quotation total of ${getQuotationDetails.totalAmount.toFixed(
           2
@@ -134,13 +132,13 @@ export const updatePayment = async (req: Request, res: Response) => {
     await session.commitTransaction();
 
     return res.status(200).json({
-      message: "Payment updated successfully.",
+      success: "Payment updated successfully.",
       payment: updatedPayment?.toObject(),
     });
   } catch (error) {
     await session.abortTransaction();
     console.error("Payment update transaction failed:", error);
-    return res.status(500).json({ message: "Internal server error!" });
+    return res.status(500).json({ error: "Internal server error!" });
   } finally {
     session.endSession();
   }

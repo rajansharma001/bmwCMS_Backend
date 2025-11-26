@@ -16,13 +16,13 @@ export const updateTicket = async (req: Request, res: Response) => {
 
     const ticketId = req.params.id;
     if (!ticketId) {
-      return res.status(400).json({ message: "Booking Id not found." });
+      return res.status(400).json({ error: "Booking Id not found." });
     }
 
     const checkTicketBooking = await TicketBookingModel.findById(ticketId);
     if (!checkTicketBooking) {
       return res.status(404).json({
-        message: `Ticket booking with Id: ${ticketId} not found.`,
+        error: `Ticket booking with Id: ${ticketId} not found.`,
       });
     }
 

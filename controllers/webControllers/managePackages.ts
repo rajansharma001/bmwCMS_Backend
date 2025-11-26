@@ -45,7 +45,7 @@ const validatePackageItem = (pkg: PackageItem): string | null => {
       return "Special Offer Details are required when an offer is active.";
   }
 
-  return null;
+  return null; // Validation successful
 };
 
 export const newPackagesSection = async (req: Request, res: Response) => {

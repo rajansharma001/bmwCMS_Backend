@@ -31,19 +31,24 @@ export const newSlider = async (req: Request, res: Response) => {
 
 export const updateSlider = async (req: Request, res: Response) => {
   try {
+    console.log("Running 1");
     const sliderId = req.params.id;
     if (!sliderId) {
       return res.status(404).json({ error: "Slider Id not found." });
     }
+    console.log("Running 2");
+
     const { heading, title, paragraph } = req.body;
 
     const file = req.file;
     const slideImage = file?.path || "";
+    console.log("Running 3");
 
     const checkSlider = await SliderModel.findById(sliderId);
     if (!checkSlider) {
       return res.status(404).json({ error: "Slider not found." });
     }
+    console.log("Running 4");
 
     const updateSlide = await SliderModel.findByIdAndUpdate(sliderId, {
       heading: heading || checkSlider.heading,
@@ -54,6 +59,9 @@ export const updateSlider = async (req: Request, res: Response) => {
     if (!updateSlide) {
       return res.status(400).json({ error: "Error while updating new slide." });
     }
+
+    console.log("Running 5");
+
     return res.status(201).json({ success: "Slider updated successfully." });
   } catch (error) {
     return res.status(500).json({ error: "Internal server error!" });

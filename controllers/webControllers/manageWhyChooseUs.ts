@@ -61,21 +61,37 @@ export const updateWhyChooseUss = async (req: Request, res: Response) => {
     if (!whyChooseUsId) {
       return res.status(400).json({ error: "WhyChooseUs Id is required." });
     }
+    console.log(req.body);
+    console.log("Running 1");
     const checkWhyChooseUs = await WhyChooseUsModel.findById(whyChooseUsId);
     if (!checkWhyChooseUs) {
       return res.status(404).json({ error: "WhyChooseUs not found." });
     }
+    console.log("Running 2");
 
     const file = req.file;
     const imageFile = file?.path || "";
 
-    const { heading, title, image, shortDescription, items } = req.body;
+    const { heading, title, shortDescription } = req.body;
+    let { items } = req.body;
+
+    // Parse items first
+    if (typeof items === "string") {
+      try {
+        items = JSON.parse(items);
+      } catch (err) {
+        return res.status(400).json({ error: "Invalid items format" });
+      }
+    }
+
     if (items.length > 3) {
       return res.status(409).json({
         error:
-          "Maximum WhyChooseUs limit reached. Please edit or remove to add new service.",
+          "Maximum WhyChooseUs limit reached. Please edit or remove to add new WhyChooseUs.",
       });
     }
+
+    console.log("Running 4");
 
     const updateWhyChooseUs = await WhyChooseUsModel.findByIdAndUpdate(
       whyChooseUsId,
@@ -92,6 +108,7 @@ export const updateWhyChooseUss = async (req: Request, res: Response) => {
         .status(409)
         .json({ error: "Error while updating WhyChooseUs." });
     }
+    console.log("Running 5");
 
     return res
       .status(200)

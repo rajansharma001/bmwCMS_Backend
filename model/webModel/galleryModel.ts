@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 // Each gallery item
 interface GalleryItem {
+  _id: string;
   image: string; // URL or file path
   caption?: string; // optional caption for the image
 }

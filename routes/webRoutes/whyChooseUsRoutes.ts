@@ -16,10 +16,13 @@ whyChooseUsRoutes.post(
   upload.single("image"),
   newWhyChooseUs
 );
-whyChooseUsRoutes.get("/get-whychooseus", getWhyChooseUs);
-whyChooseUsRoutes.get("/get-whychooseus/:id", getWhyChooseUsById);
+
 whyChooseUsRoutes.patch(
   "/update-whychooseus/:id",
   verifyToken,
+  upload.single("image"),
   updateWhyChooseUss
 );
+
+whyChooseUsRoutes.get("/get-whychooseus", getWhyChooseUs);
+whyChooseUsRoutes.get("/get-whychooseus/:id", getWhyChooseUsById);

@@ -69,57 +69,47 @@ export const updateGallery = async (req: Request, res: Response) => {
     if (!existingGallery) {
       return res.status(404).json({ error: "Gallery not found." });
     }
-    const { heading, title, shortDescription } = req.body;
+
+    // Parse kept images from frontend
+    const existingGalleryIds = JSON.parse(req.body.existingGalleryIds || "[]");
+
+    // Filter out removed images
+    const keptImages = existingGallery.gallery.filter((img) =>
+      existingGalleryIds.includes(img._id.toString())
+    );
+
+    // New uploaded files
     const files = req.files as any[];
 
-    const gallery = files.map((file) => ({
+    const newImages = (files || []).map((file) => ({
       image: file.path,
-      caption: "",
+      _id: new mongoose.Types.ObjectId().toString(),
     }));
 
-    // 1. Start with the existing gallery array
-    const keptExistingImages: GalleryImageItem[] =
-      existingGallery.gallery || [];
+    // Final gallery = kept old + new uploaded
+    const finalGallery = [...keptImages, ...newImages];
 
-    // 2. Map the newly uploaded files
-    const newImages: GalleryImageItem[] = [];
-
-    if (files && files.length > 0) {
-      newImages.push(
-        ...files.map((file) => ({
-          image: file.path,
-          _id: new mongoose.Types.ObjectId().toString(), // Convert to string if your interface expects string
-        }))
-      );
-    }
-
-    // 3. Combine existing images and new images
-    const finalGallery = [...keptExistingImages, ...newImages];
-
-    // 4. Update the gallery document
     const updated = await GalleryModel.findByIdAndUpdate(
       galleryId,
       {
-        heading: heading || existingGallery.heading,
-        title: title || existingGallery.title,
-        shortDescription: shortDescription || existingGallery.shortDescription,
-        // Use the combined array
+        heading: req.body.heading || existingGallery.heading,
+        title: req.body.title || existingGallery.title,
+        shortDescription:
+          req.body.shortDescription || existingGallery.shortDescription,
         gallery: finalGallery,
       },
-      { new: true, runValidators: true }
+      { new: true }
     );
-    if (!updated) {
-      return res.status(500).json({ error: "Update failed unexpectedly." });
-    }
 
     return res
       .status(200)
-      .json({ success: "Gallery updated successfully.", updated });
+      .json({ success: "Gallery updated successfully", updated });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error!" });
   }
 };
+
 // Get all galleries
 export const getGallery = async (req: Request, res: Response) => {
   try {
