@@ -5,7 +5,8 @@
   "main": "server.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon config/server.ts"
+    "dev": "nodemon config/server.ts",
+    "start": "node dist/config/server.js"
   },
   "author": "Rajan Sharma",
   "license": "ISC",
